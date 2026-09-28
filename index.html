@@ -1,1 +1,2321 @@
+<!DOCTYPE html>
+<html lang="ja">
 
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+
+<title>M5Stick S3 Motion Controller</title>
+
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+
+  margin: 0;
+
+  padding: 16px;
+
+  background: #111;
+
+  color: #fff;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+}
+
+
+h1 {
+
+  margin: 0 0 12px;
+
+  font-size: 20px;
+
+}
+
+
+h2 {
+
+  margin: 0 0 8px;
+
+  font-size: 15px;
+
+  color: #aaa;
+
+}
+
+
+button {
+
+  padding: 10px 16px;
+
+  border: none;
+
+  border-radius: 6px;
+
+  background: #333;
+
+  color: #fff;
+
+  font-size: 15px;
+
+  cursor: pointer;
+
+}
+
+
+button:hover {
+
+  background: #444;
+
+}
+
+
+.status {
+
+  margin-top: 10px;
+
+  padding: 10px;
+
+  border-radius: 6px;
+
+  background: #222;
+
+  font-size: 14px;
+
+}
+
+
+.connected {
+
+  color: #00e676;
+
+}
+
+
+.waiting {
+
+  color: #ffcc00;
+
+}
+
+
+.layout {
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(300px, 1fr)
+    minmax(300px, 1fr);
+
+  gap: 16px;
+
+  margin-top: 16px;
+
+}
+
+
+.panel {
+
+  background: #1b1b1b;
+
+  border-radius: 8px;
+
+  padding: 14px;
+
+  margin-bottom: 16px;
+
+}
+
+
+/* =========================================================
+   3D表示
+   ========================================================= */
+
+.scene {
+
+  width: 100%;
+
+  height: 300px;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  perspective: 700px;
+
+  overflow: hidden;
+
+  background: #101010;
+
+  border-radius: 6px;
+
+}
+
+
+.cube {
+
+  position: relative;
+
+  width: 120px;
+
+  height: 120px;
+
+  transform-style: preserve-3d;
+
+  will-change: transform;
+
+}
+
+
+.face {
+
+  position: absolute;
+
+  width: 120px;
+
+  height: 120px;
+
+  border: 2px solid #fff;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 17px;
+
+  font-weight: bold;
+
+  background: rgba(50, 120, 255, 0.25);
+
+}
+
+
+.front {
+
+  transform:
+    translateZ(60px);
+
+}
+
+
+.back {
+
+  transform:
+    rotateY(180deg)
+    translateZ(60px);
+
+}
+
+
+.right {
+
+  transform:
+    rotateY(90deg)
+    translateZ(60px);
+
+}
+
+
+.left {
+
+  transform:
+    rotateY(-90deg)
+    translateZ(60px);
+
+}
+
+
+.top {
+
+  transform:
+    rotateX(90deg)
+    translateZ(60px);
+
+}
+
+
+.bottom {
+
+  transform:
+    rotateX(-90deg)
+    translateZ(60px);
+
+}
+
+
+/* =========================================================
+   モーション表示
+   ========================================================= */
+
+.motion {
+
+  margin-top: 12px;
+
+  padding: 20px;
+
+  min-height: 80px;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  border-radius: 8px;
+
+  background: #222;
+
+  font-size: 30px;
+
+  font-weight: bold;
+
+}
+
+
+/* =========================================================
+   軸表示
+   ========================================================= */
+
+.axis-row {
+
+  display: grid;
+
+  grid-template-columns:
+    35px
+    80px
+    1fr;
+
+  gap: 8px;
+
+  align-items: center;
+
+  margin: 8px 0;
+
+}
+
+
+.axis-name {
+
+  font-weight: bold;
+
+}
+
+
+.axis-value {
+
+  font-family: monospace;
+
+  text-align: right;
+
+}
+
+
+.bar-container {
+
+  position: relative;
+
+  height: 16px;
+
+  background: #333;
+
+  border-radius: 4px;
+
+  overflow: hidden;
+
+}
+
+
+.bar-center {
+
+  position: absolute;
+
+  left: 50%;
+
+  top: 0;
+
+  width: 1px;
+
+  height: 100%;
+
+  background: #aaa;
+
+}
+
+
+.bar {
+
+  position: absolute;
+
+  top: 0;
+
+  height: 100%;
+
+  background: #2196f3;
+
+}
+
+
+/* =========================================================
+   波形
+   ========================================================= */
+
+canvas {
+
+  width: 100%;
+
+  height: 180px;
+
+  background: #101010;
+
+  border-radius: 6px;
+
+}
+
+
+/* =========================================================
+   デバッグ情報
+   ========================================================= */
+
+.info {
+
+  padding: 10px;
+
+  background: #222;
+
+  border-radius: 6px;
+
+  font-family: monospace;
+
+  font-size: 13px;
+
+  line-height: 1.7;
+
+  word-break: break-all;
+
+}
+
+
+.debug-axis {
+
+  font-family: monospace;
+
+  font-size: 13px;
+
+  line-height: 1.8;
+
+}
+
+
+.debug-axis span {
+
+  display: inline-block;
+
+  min-width: 70px;
+
+}
+
+
+@media (max-width: 800px) {
+
+  .layout {
+
+    grid-template-columns: 1fr;
+
+  }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<h1>
+M5Stick S3 Motion Controller
+</h1>
+
+
+<button id="startButton">
+Gamepadを検索
+</button>
+
+
+<div
+  id="status"
+  class="status waiting"
+>
+Gamepadを待っています...
+</div>
+
+
+<div class="layout">
+
+
+<!-- =====================================================
+     左側
+     ====================================================== -->
+
+<div>
+
+
+<!-- =====================================================
+     3D
+     ====================================================== -->
+
+<div class="panel">
+
+<h2>
+3D Motion
+</h2>
+
+
+<div class="scene">
+
+<div
+  id="cube"
+  class="cube"
+>
+
+<div class="face front">
+FRONT
+</div>
+
+<div class="face back">
+BACK
+</div>
+
+<div class="face right">
+RIGHT
+</div>
+
+<div class="face left">
+LEFT
+</div>
+
+<div class="face top">
+TOP
+</div>
+
+<div class="face bottom">
+BOTTOM
+</div>
+
+</div>
+
+</div>
+
+
+<div
+  id="motion"
+  class="motion"
+>
+---
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     接続情報
+     ====================================================== -->
+
+<div class="panel">
+
+<h2>
+接続情報
+</h2>
+
+
+<div
+  id="info"
+  class="info"
+>
+Gamepad: -
+<br>
+Index: -
+<br>
+Axes: -
+<br>
+Buttons: -
+<br>
+Polling: -
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     生のAxis値
+     ====================================================== -->
+
+<div class="panel">
+
+<h2>
+Gamepad Axis 生データ
+</h2>
+
+
+<div
+  id="rawAxis"
+  class="debug-axis"
+>
+0: -
+<br>
+1: -
+<br>
+2: -
+<br>
+3: -
+<br>
+4: -
+<br>
+5: -
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     モーションデバッグ
+     ====================================================== -->
+
+<div class="panel">
+
+<h2>
+モーション判定デバッグ
+</h2>
+
+
+<div
+  id="motionDebug"
+  class="info"
+>
+待機中...
+</div>
+
+</div>
+
+
+</div>
+
+
+<!-- =====================================================
+     右側
+     ====================================================== -->
+
+<div>
+
+
+<!-- =====================================================
+     加速度
+     ====================================================== -->
+
+<div class="panel">
+
+<h2>
+加速度
+</h2>
+
+
+<div class="axis-row">
+
+<div class="axis-name">
+X
+</div>
+
+<div
+  id="accelX"
+  class="axis-value"
+>
+0.000
+</div>
+
+<div class="bar-container">
+
+<div class="bar-center"></div>
+
+<div
+  id="barAccelX"
+  class="bar"
+></div>
+
+</div>
+
+</div>
+
+
+<div class="axis-row">
+
+<div class="axis-name">
+Y
+</div>
+
+<div
+  id="accelY"
+  class="axis-value"
+>
+0.000
+</div>
+
+<div class="bar-container">
+
+<div class="bar-center"></div>
+
+<div
+  id="barAccelY"
+  class="bar"
+></div>
+
+</div>
+
+</div>
+
+
+<div class="axis-row">
+
+<div class="axis-name">
+Z
+</div>
+
+<div
+  id="accelZ"
+  class="axis-value"
+>
+0.000
+</div>
+
+<div class="bar-container">
+
+<div class="bar-center"></div>
+
+<div
+  id="barAccelZ"
+  class="bar"
+></div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     ジャイロ
+     ====================================================== -->
+
+<div class="panel">
+
+<h2>
+ジャイロ
+</h2>
+
+
+<div class="axis-row">
+
+<div class="axis-name">
+X
+</div>
+
+<div
+  id="gyroX"
+  class="axis-value"
+>
+0.000
+</div>
+
+<div class="bar-container">
+
+<div class="bar-center"></div>
+
+<div
+  id="barGyroX"
+  class="bar"
+></div>
+
+</div>
+
+</div>
+
+
+<div class="axis-row">
+
+<div class="axis-name">
+Y
+</div>
+
+<div
+  id="gyroY"
+  class="axis-value"
+>
+0.000
+</div>
+
+<div class="bar-container">
+
+<div class="bar-center"></div>
+
+<div
+  id="barGyroY"
+  class="bar"
+></div>
+
+</div>
+
+</div>
+
+
+<div class="axis-row">
+
+<div class="axis-name">
+Z
+</div>
+
+<div
+  id="gyroZ"
+  class="axis-value"
+>
+0.000
+</div>
+
+<div class="bar-container">
+
+<div class="bar-center"></div>
+
+<div
+  id="barGyroZ"
+  class="bar"
+></div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     加速度波形
+     ====================================================== -->
+
+<div class="panel">
+
+<h2>
+加速度 波形
+</h2>
+
+
+<canvas
+  id="accelCanvas"
+  width="600"
+  height="180"
+></canvas>
+
+</div>
+
+
+<!-- =====================================================
+     ジャイロ波形
+     ====================================================== -->
+
+<div class="panel">
+
+<h2>
+ジャイロ 波形
+</h2>
+
+
+<canvas
+  id="gyroCanvas"
+  width="600"
+  height="180"
+></canvas>
+
+</div>
+
+
+</div>
+
+</div>
+
+
+<script>
+
+
+// ==========================================================
+// 設定
+// ==========================================================
+
+// ブラウザで保持する履歴時間
+const HISTORY_MS = 1500;
+
+
+// Gamepad APIを確認する間隔
+const POLL_INTERVAL = 5;
+
+
+// ----------------------------------------------------------
+// M5Stick側の変換設定と合わせる
+//
+// 加速度:
+//
+//   M5Stick
+//   -20 ～ +20 m/s²
+//
+//   ↓
+//
+//   Gamepad
+//   -1 ～ +1
+//
+// ----------------------------------------------------------
+
+const ACCEL_RANGE = 20.0;
+
+
+// ----------------------------------------------------------
+// ジャイロ:
+//
+//   M5Stick
+//   -500 ～ +500 deg/s
+//
+//   ↓
+//
+//   Gamepad
+//   -1 ～ +1
+//
+// ----------------------------------------------------------
+
+const GYRO_RANGE = 500.0;
+
+
+// モーション判定のしきい値
+//
+// 「重力を除いた加速度」の大きさ
+//
+// 0.15G程度から反応させる
+//
+
+const MOTION_THRESHOLD_G = 0.15;
+
+
+// 連続して判定する間隔
+const MOTION_COOLDOWN = 250;
+
+
+// 重力成分を取り除くための
+// ローパスフィルタ係数
+//
+// 小さいほどゆっくり変化する成分を
+// 「重力」として扱う
+//
+
+const GRAVITY_ALPHA = 0.90;
+
+
+// ==========================================================
+// DOM
+// ==========================================================
+
+const startButton =
+  document.getElementById(
+    "startButton"
+  );
+
+
+const statusElement =
+  document.getElementById(
+    "status"
+  );
+
+
+const infoElement =
+  document.getElementById(
+    "info"
+  );
+
+
+const rawAxisElement =
+  document.getElementById(
+    "rawAxis"
+  );
+
+
+const motionElement =
+  document.getElementById(
+    "motion"
+  );
+
+
+const motionDebugElement =
+  document.getElementById(
+    "motionDebug"
+  );
+
+
+const cubeElement =
+  document.getElementById(
+    "cube"
+  );
+
+
+// ==========================================================
+// Axis DOM
+// ==========================================================
+
+const axisElements = {
+
+  accelX: {
+    value:
+      document.getElementById("accelX"),
+
+    bar:
+      document.getElementById("barAccelX")
+  },
+
+  accelY: {
+    value:
+      document.getElementById("accelY"),
+
+    bar:
+      document.getElementById("barAccelY")
+  },
+
+  accelZ: {
+    value:
+      document.getElementById("accelZ"),
+
+    bar:
+      document.getElementById("barAccelZ")
+  },
+
+  gyroX: {
+    value:
+      document.getElementById("gyroX"),
+
+    bar:
+      document.getElementById("barGyroX")
+  },
+
+  gyroY: {
+    value:
+      document.getElementById("gyroY"),
+
+    bar:
+      document.getElementById("barGyroY")
+  },
+
+  gyroZ: {
+    value:
+      document.getElementById("gyroZ"),
+
+    bar:
+      document.getElementById("barGyroZ")
+  }
+
+};
+
+
+// ==========================================================
+// データ履歴
+// ==========================================================
+
+const history = [];
+
+
+// ==========================================================
+// 現在値
+// ==========================================================
+
+let currentData = {
+
+  ax: 0,
+  ay: 0,
+  az: 0,
+
+  gx: 0,
+  gy: 0,
+  gz: 0,
+
+  lax: 0,
+  lay: 0,
+  laz: 0,
+
+  timestamp:
+    performance.now()
+
+};
+
+
+// ==========================================================
+// 推定している重力
+// ==========================================================
+
+let gravity = {
+
+  x: 0,
+  y: 0,
+  z: 0
+
+};
+
+
+// ==========================================================
+// モーション
+// ==========================================================
+
+let lastMotionTime = 0;
+
+
+// ==========================================================
+// 3D姿勢
+// ==========================================================
+
+let rotationX = 0;
+
+let rotationY = 0;
+
+let rotationZ = 0;
+
+let last3DTime =
+  performance.now();
+
+
+// ==========================================================
+// Gamepad
+// ==========================================================
+
+let connectedGamepad =
+  null;
+
+
+// ==========================================================
+// Gamepad検索
+// ==========================================================
+
+function findGamepad() {
+
+  const gamepads =
+    navigator.getGamepads();
+
+
+  for (
+    const gamepad
+    of gamepads
+  ) {
+
+    if (!gamepad) {
+      continue;
+    }
+
+
+    return gamepad;
+
+  }
+
+
+  return null;
+
+}
+
+
+// ==========================================================
+// 接続
+// ==========================================================
+
+window.addEventListener(
+  "gamepadconnected",
+  (event) => {
+
+    connectedGamepad =
+      event.gamepad;
+
+
+    updateStatus(
+      connectedGamepad
+    );
+
+  }
+);
+
+
+// ==========================================================
+// 切断
+// ==========================================================
+
+window.addEventListener(
+  "gamepaddisconnected",
+  () => {
+
+    connectedGamepad =
+      null;
+
+
+    statusElement.textContent =
+      "Gamepadが切断されました";
+
+
+    statusElement.className =
+      "status waiting";
+
+  }
+);
+
+
+// ==========================================================
+// 接続状態
+// ==========================================================
+
+function updateStatus(
+  gamepad
+) {
+
+  if (!gamepad) {
+
+    statusElement.textContent =
+      "Gamepadを待っています...";
+
+
+    statusElement.className =
+      "status waiting";
+
+
+    return;
+
+  }
+
+
+  statusElement.textContent =
+    "接続中: " +
+    gamepad.id;
+
+
+  statusElement.className =
+    "status connected";
+
+
+  infoElement.innerHTML =
+
+    "Gamepad: " +
+    gamepad.id +
+
+    "<br>" +
+
+    "Index: " +
+    gamepad.index +
+
+    "<br>" +
+
+    "Axes: " +
+    gamepad.axes.length +
+
+    "<br>" +
+
+    "Buttons: " +
+    gamepad.buttons.length +
+
+    "<br>" +
+
+    "Polling: " +
+    POLL_INTERVAL +
+    "ms";
+
+}
+
+
+// ==========================================================
+// Axis表示
+// ==========================================================
+
+function updateAxis(
+  element,
+  value
+) {
+
+  element.value.textContent =
+    value.toFixed(3);
+
+
+  // Gamepad値は-1～+1
+  const limited =
+    Math.max(
+      -1,
+      Math.min(
+        1,
+        value
+      )
+    );
+
+
+  if (
+    limited >= 0
+  ) {
+
+    element.bar.style.left =
+      "50%";
+
+
+    element.bar.style.width =
+      (limited * 50) +
+      "%";
+
+  }
+  else {
+
+    element.bar.style.left =
+      (50 + limited * 50) +
+      "%";
+
+
+    element.bar.style.width =
+      (-limited * 50) +
+      "%";
+
+  }
+
+}
+
+
+// ==========================================================
+// センサー表示
+// ==========================================================
+
+function updateSensorDisplay(
+  data
+) {
+
+  updateAxis(
+    axisElements.accelX,
+    data.ax
+  );
+
+
+  updateAxis(
+    axisElements.accelY,
+    data.ay
+  );
+
+
+  updateAxis(
+    axisElements.accelZ,
+    data.az
+  );
+
+
+  updateAxis(
+    axisElements.gyroX,
+    data.gx
+  );
+
+
+  updateAxis(
+    axisElements.gyroY,
+    data.gy
+  );
+
+
+  updateAxis(
+    axisElements.gyroZ,
+    data.gz
+  );
+
+}
+
+
+// ==========================================================
+// 重力成分を推定
+// ==========================================================
+//
+// 静止しているときの加速度はほぼ重力。
+// これをローパスフィルタで推定します。
+//
+// 重力
+//     ↓
+//  ゆっくり変化
+//
+// 振る動き
+//     ↓
+//  急激に変化
+//
+// という性質を利用します。
+// ==========================================================
+
+function updateGravity(
+  ax,
+  ay,
+  az
+) {
+
+  gravity.x =
+    GRAVITY_ALPHA *
+    gravity.x +
+    (1 - GRAVITY_ALPHA) *
+    ax;
+
+
+  gravity.y =
+    GRAVITY_ALPHA *
+    gravity.y +
+    (1 - GRAVITY_ALPHA) *
+    ay;
+
+
+  gravity.z =
+    GRAVITY_ALPHA *
+    gravity.z +
+    (1 - GRAVITY_ALPHA) *
+    az;
+
+}
+
+
+// ==========================================================
+// 重力を除いた加速度
+// ==========================================================
+
+function calculateLinearAcceleration(
+  ax,
+  ay,
+  az
+) {
+
+  return {
+
+    x:
+      ax - gravity.x,
+
+    y:
+      ay - gravity.y,
+
+    z:
+      az - gravity.z
+
+  };
+
+}
+
+
+// ==========================================================
+// モーション判定
+// ==========================================================
+
+function detectMotion(
+  data
+) {
+
+  const now =
+    performance.now();
+
+
+  // クールダウン
+  if (
+    now - lastMotionTime <
+    MOTION_COOLDOWN
+  ) {
+
+    return;
+
+  }
+
+
+  // --------------------------------------------------------
+  // 重力を除いた加速度
+  // --------------------------------------------------------
+
+  const x =
+    data.lax;
+
+
+  const y =
+    data.lay;
+
+
+  const z =
+    data.laz;
+
+
+  // ベクトルの大きさ
+  const magnitude =
+    Math.sqrt(
+      x * x +
+      y * y +
+      z * z
+    );
+
+
+  // G単位へ変換
+  //
+  // M5Stickの加速度はm/s²。
+  //
+  const magnitudeG =
+    magnitude /
+    9.80665;
+
+
+  // --------------------------------------------------------
+  // しきい値以下なら何もしない
+  // --------------------------------------------------------
+
+  if (
+    magnitudeG <
+    MOTION_THRESHOLD_G
+  ) {
+
+    motionDebugElement.innerHTML =
+
+      "Linear Accel: " +
+      magnitudeG.toFixed(3) +
+      " G" +
+
+      "<br>" +
+
+      "Threshold: " +
+      MOTION_THRESHOLD_G +
+      " G" +
+
+      "<br>" +
+
+      "Status: waiting";
+
+    return;
+
+  }
+
+
+  // --------------------------------------------------------
+  // 最も強い軸を調べる
+  // --------------------------------------------------------
+
+  const absX =
+    Math.abs(x);
+
+
+  const absY =
+    Math.abs(y);
+
+
+  const absZ =
+    Math.abs(z);
+
+
+  let direction;
+
+
+  let peak;
+
+
+  if (
+    absX >= absY &&
+    absX >= absZ
+  ) {
+
+    peak =
+      x;
+
+
+    if (
+      x > 0
+    ) {
+
+      direction =
+        "RIGHT";
+
+    }
+    else {
+
+      direction =
+        "LEFT";
+
+    }
+
+  }
+  else if (
+    absY >= absX &&
+    absY >= absZ
+  ) {
+
+    peak =
+      y;
+
+
+    if (
+      y > 0
+    ) {
+
+      direction =
+        "UP";
+
+    }
+    else {
+
+      direction =
+        "DOWN";
+
+    }
+
+  }
+  else {
+
+    peak =
+      z;
+
+
+    if (
+      z > 0
+    ) {
+
+      direction =
+        "FORWARD";
+
+    }
+    else {
+
+      direction =
+        "BACKWARD";
+
+    }
+
+  }
+
+
+  // --------------------------------------------------------
+  // モーション確定
+  // --------------------------------------------------------
+
+  lastMotionTime =
+    now;
+
+
+  motionElement.textContent =
+    direction;
+
+
+  motionDebugElement.innerHTML =
+
+    "Motion: " +
+    direction +
+
+    "<br>" +
+
+    "Linear Accel: " +
+    magnitudeG.toFixed(3) +
+    " G" +
+
+    "<br>" +
+
+    "Peak: " +
+    peak.toFixed(3) +
+    " m/s²" +
+
+    "<br>" +
+
+    "X: " +
+    x.toFixed(3) +
+
+    "<br>" +
+
+    "Y: " +
+    y.toFixed(3) +
+
+    "<br>" +
+
+    "Z: " +
+    z.toFixed(3);
+
+
+  setTimeout(
+    () => {
+
+      if (
+        motionElement.textContent ===
+        direction
+      ) {
+
+        motionElement.textContent =
+          "---";
+
+      }
+
+    },
+    500
+  );
+
+}
+
+
+// ==========================================================
+// 3D表示
+// ==========================================================
+//
+// 今回はジャイロ値を正しくdeg/sに戻してから
+// 積分します。
+//
+// Gamepad:
+//     -1 ～ +1
+//
+// ↓
+//
+// 実際のジャイロ:
+//     -500 ～ +500 deg/s
+//
+// ==========================================================
+
+function update3D(
+  data
+) {
+
+  const now =
+    performance.now();
+
+
+  let dt =
+    (now - last3DTime) /
+    1000;
+
+
+  last3DTime =
+    now;
+
+
+  // 異常に大きなdtを防ぐ
+  if (
+    dt > 0.1
+  ) {
+
+    dt =
+      0.1;
+
+  }
+
+
+  // --------------------------------------------------------
+  // Gamepad値 → 実際のジャイロ値
+  // --------------------------------------------------------
+
+  const gyroX =
+    data.gx *
+    GYRO_RANGE;
+
+
+  const gyroY =
+    data.gy *
+    GYRO_RANGE;
+
+
+  const gyroZ =
+    data.gz *
+    GYRO_RANGE;
+
+
+  // --------------------------------------------------------
+  // ジャイロ積分
+  // --------------------------------------------------------
+
+  rotationX +=
+    gyroX * dt;
+
+
+  rotationY +=
+    gyroY * dt;
+
+
+  rotationZ +=
+    gyroZ * dt;
+
+
+  // --------------------------------------------------------
+  // 角度を整理
+  // --------------------------------------------------------
+
+  rotationX %= 360;
+
+  rotationY %= 360;
+
+  rotationZ %= 360;
+
+
+  // --------------------------------------------------------
+  // 3D表示
+  // --------------------------------------------------------
+
+  cubeElement.style.transform =
+
+    "rotateX(" +
+    rotationX +
+    "deg) " +
+
+    "rotateY(" +
+    rotationY +
+    "deg) " +
+
+    "rotateZ(" +
+    rotationZ +
+    "deg)";
+
+}
+
+
+// ==========================================================
+// 履歴
+// ==========================================================
+
+function addHistory(
+  data
+) {
+
+  history.push({
+    ...data
+  });
+
+
+  const cutoff =
+    data.timestamp -
+    HISTORY_MS;
+
+
+  while (
+    history.length > 0 &&
+    history[0].timestamp < cutoff
+  ) {
+
+    history.shift();
+
+  }
+
+}
+
+
+// ==========================================================
+// 波形描画
+// ==========================================================
+
+function drawGraph(
+  canvas,
+  values
+) {
+
+  const ctx =
+    canvas.getContext("2d");
+
+
+  const width =
+    canvas.width;
+
+
+  const height =
+    canvas.height;
+
+
+  ctx.fillStyle =
+    "#101010";
+
+
+  ctx.fillRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+
+  // --------------------------------------------------------
+  // 中央線
+  // --------------------------------------------------------
+
+  ctx.strokeStyle =
+    "#444";
+
+
+  ctx.lineWidth =
+    1;
+
+
+  ctx.beginPath();
+
+
+  ctx.moveTo(
+    0,
+    height / 2
+  );
+
+
+  ctx.lineTo(
+    width,
+    height / 2
+  );
+
+
+  ctx.stroke();
+
+
+  if (
+    values.length <
+    2
+  ) {
+
+    return;
+
+  }
+
+
+  // --------------------------------------------------------
+  // 波形
+  // --------------------------------------------------------
+
+  ctx.strokeStyle =
+    "#2196f3";
+
+
+  ctx.lineWidth =
+    2;
+
+
+  ctx.beginPath();
+
+
+  values.forEach(
+    (
+      value,
+      index
+    ) => {
+
+      const x =
+        index /
+        (values.length - 1) *
+        width;
+
+
+      // Gamepad値 -1～+1
+      const y =
+        height / 2 -
+        value *
+        (height / 2);
+
+
+      if (
+        index === 0
+      ) {
+
+        ctx.moveTo(
+          x,
+          y
+        );
+
+      }
+      else {
+
+        ctx.lineTo(
+          x,
+          y
+        );
+
+      }
+
+    }
+  );
+
+
+  ctx.stroke();
+
+}
+
+
+// ==========================================================
+// グラフ更新
+// ==========================================================
+
+function updateGraphs() {
+
+  const accelValues =
+    history.map(
+      item =>
+        item.lax /
+        ACCEL_RANGE
+    );
+
+
+  const gyroValues =
+    history.map(
+      item =>
+        item.gx
+    );
+
+
+  drawGraph(
+    document.getElementById(
+      "accelCanvas"
+    ),
+    accelValues
+  );
+
+
+  drawGraph(
+    document.getElementById(
+      "gyroCanvas"
+    ),
+    gyroValues
+  );
+
+}
+
+
+// ==========================================================
+// 生のAxis表示
+// ==========================================================
+
+function updateRawAxis(
+  gamepad
+) {
+
+  if (!gamepad) {
+
+    rawAxisElement.innerHTML =
+      "Gamepadなし";
+
+    return;
+
+  }
+
+
+  let html = "";
+
+
+  for (
+    let i = 0;
+    i < gamepad.axes.length;
+    i++
+  ) {
+
+    html +=
+
+      i +
+      ": " +
+      gamepad.axes[i].toFixed(6) +
+      "<br>";
+
+  }
+
+
+  rawAxisElement.innerHTML =
+    html;
+
+}
+
+
+// ==========================================================
+// Gamepad読み取り
+// ==========================================================
+
+function readGamepad() {
+
+  const gamepad =
+    findGamepad();
+
+
+  if (!gamepad) {
+
+    return;
+
+  }
+
+
+  connectedGamepad =
+    gamepad;
+
+
+  // --------------------------------------------------------
+  // 生データ確認
+  // --------------------------------------------------------
+
+  updateRawAxis(
+    gamepad
+  );
+
+
+  // --------------------------------------------------------
+  // Axis
+  //
+  // 0～2 = 加速度
+  // 3～5 = ジャイロ
+  // --------------------------------------------------------
+
+  const axNormalized =
+    gamepad.axes[0] ?? 0;
+
+
+  const ayNormalized =
+    gamepad.axes[1] ?? 0;
+
+
+  const azNormalized =
+    gamepad.axes[2] ?? 0;
+
+
+  const gxNormalized =
+    gamepad.axes[3] ?? 0;
+
+
+  const gyNormalized =
+    gamepad.axes[4] ?? 0;
+
+
+  const gzNormalized =
+    gamepad.axes[5] ?? 0;
+
+
+  // --------------------------------------------------------
+  // 加速度を実際のm/s²へ戻す
+  // --------------------------------------------------------
+
+  const ax =
+    axNormalized *
+    ACCEL_RANGE;
+
+
+  const ay =
+    ayNormalized *
+    ACCEL_RANGE;
+
+
+  const az =
+    azNormalized *
+    ACCEL_RANGE;
+
+
+  // --------------------------------------------------------
+  // ジャイロは後で×500するので、
+  // ここではGamepad値を保持
+  // --------------------------------------------------------
+
+  const gx =
+    gxNormalized;
+
+
+  const gy =
+    gyNormalized;
+
+
+  const gz =
+    gzNormalized;
+
+
+  // --------------------------------------------------------
+  // 重力推定
+  // --------------------------------------------------------
+
+  updateGravity(
+    ax,
+    ay,
+    az
+  );
+
+
+  // --------------------------------------------------------
+  // 重力を除いた加速度
+  // --------------------------------------------------------
+
+  const linear =
+    calculateLinearAcceleration(
+      ax,
+      ay,
+      az
+    );
+
+
+  const data = {
+
+    ax:
+      axNormalized,
+
+    ay:
+      ayNormalized,
+
+    az:
+      azNormalized,
+
+
+    gx:
+      gx,
+
+    gy:
+      gy,
+
+    gz:
+      gz,
+
+
+    lax:
+      linear.x,
+
+    lay:
+      linear.y,
+
+    laz:
+      linear.z,
+
+
+    timestamp:
+      performance.now()
+
+  };
+
+
+  currentData =
+    data;
+
+
+  // --------------------------------------------------------
+  // 履歴
+  // --------------------------------------------------------
+
+  addHistory(
+    data
+  );
+
+
+  // --------------------------------------------------------
+  // モーション
+  // --------------------------------------------------------
+
+  detectMotion(
+    data
+  );
+
+
+  // --------------------------------------------------------
+  // 3D
+  // --------------------------------------------------------
+
+  update3D(
+    data
+  );
+
+
+  // --------------------------------------------------------
+  // 数値表示
+  // --------------------------------------------------------
+
+  updateSensorDisplay(
+    data
+  );
+
+
+  // --------------------------------------------------------
+  // 接続状態
+  // --------------------------------------------------------
+
+  updateStatus(
+    gamepad
+  );
+
+}
+
+
+// ==========================================================
+// 高頻度ポーリング
+// ==========================================================
+
+setInterval(
+  readGamepad,
+  POLL_INTERVAL
+);
+
+
+// ==========================================================
+// グラフ
+// ==========================================================
+
+setInterval(
+  updateGraphs,
+  33
+);
+
+
+// ==========================================================
+// 開始ボタン
+// ==========================================================
+
+startButton.addEventListener(
+  "click",
+  () => {
+
+    const gamepad =
+      findGamepad();
+
+
+    if (!gamepad) {
+
+      statusElement.textContent =
+        "Gamepadが見つかりません。";
+
+      statusElement.className =
+        "status waiting";
+
+
+      return;
+
+    }
+
+
+    connectedGamepad =
+      gamepad;
+
+
+    updateStatus(
+      gamepad
+    );
+
+
+    updateRawAxis(
+      gamepad
+    );
+
+  }
+);
+
+
+// ==========================================================
+// 初期化
+// ==========================================================
+
+console.log(
+  "M5Stick S3 Motion Controller"
+);
+
+console.log(
+  "Gamepad API:",
+  "getGamepads" in navigator
+);
+
+console.log(
+  "Polling:",
+  POLL_INTERVAL,
+  "ms"
+);
+
+</script>
+
+
+</body>
+
+</html>
